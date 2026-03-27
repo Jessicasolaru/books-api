@@ -1,7 +1,8 @@
 import { dbConfig } from "../../config/db.config.js";
-import { Book, initBook } from "../../models/Book.model.js";
-import { Author, initAuthor } from "../../models/Author.model.js";
-import { BookAuthor, initBookAuthor } from "../../models/BookAuthor.model.js";
+import { initBook } from "../../models/Book.model.js";
+import { initAuthor } from "../../models/Author.model.js";
+import { initBookAuthor } from "../../models/BookAuthor.model.js";
+import { defineAssociation } from "../../models/associations/BookAuthor.association.js";
 import { DBError } from "../../utils/errors.util.js";
 import { Logger } from "../../utils/logger.js";
 
@@ -16,14 +17,13 @@ export class DB {
       await dbConfig.authenticate();
       this.logger.debug("Autenticado con éxito");
 
-      // Inicializa los modelos
+      // Primero inicializa los modelos
       this.initModels(dbConfig);
 
-      // Define las asociaciones DESPUÉS de inicializar los modelos
+      // Luego define las asociaciones (requiere que los modelos ya existan)
       this.initAssociations();
 
       this.logger.info("Sincronizando con la base de datos...");
-      // alter:true actualiza las tablas si cambian los modelos, sin borrar datos
       await dbConfig.sync({ alter: true });
       this.logger.info("Sincronización completada ✅");
     } catch (error) {
@@ -54,20 +54,8 @@ export class DB {
     try {
       this.logger.info("Definiendo asociaciones...");
 
-      // Relación muchos a muchos: Book <-> Author a través de BookAuthor
-      Book.belongsToMany(Author, {
-        through: BookAuthor, // tabla intermedia
-        foreignKey: "bookId",
-        otherKey: "authorId",
-        as: "authors", // alias para usar en queries
-      });
-
-      Author.belongsToMany(Book, {
-        through: BookAuthor,
-        foreignKey: "authorId",
-        otherKey: "bookId",
-        as: "books", // alias para usar en queries
-      });
+      // Delega al archivo externo de asociaciones
+      defineAssociation();
 
       this.logger.debug("Asociaciones definidas con éxito");
     } catch (error) {

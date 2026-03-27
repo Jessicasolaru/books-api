@@ -5,8 +5,7 @@ import { Logger } from "../../utils/logger.js";
 import { httpLogger } from "../../middleware/logger.middleware.js";
 import { errorHandler } from "../../middleware/error.middleware.js";
 import { DB } from "../db/DB.service.js";
-import bookRouter from "../../routes/book.routes.js";
-import authorRouter from "../../routes/author.routes.js";
+import router from "../../routes/index.js";
 
 const { server } = env;
 
@@ -17,6 +16,7 @@ export class Server {
   static logger = new Logger("SERVER");
 
   static async bootstrap(config = {}) {
+    // Mensaje de inicio según el entorno
     server.environment === "PROD"
       ? this.logger.info("Servidor inicializando en Producción")
       : this.logger.info("Servidor inicializando en modo Desarrollo");
@@ -27,25 +27,28 @@ export class Server {
     // Permite recibir JSON en el body de las peticiones
     this.app.use(express.json());
 
+    // Habilita recepción de formularios si se indica en la config
     if (config.multiFormat) {
       this.logger.info("Habilitando form-urlencoded");
       this.app.use(urlencoded({ extended: true }));
     }
 
+    // Habilita el logger de performance HTTP si se indica en la config
     if (config.loggerPerformance) {
       this.logger.info("Habilitando logger de performance HTTP");
       this.app.use(httpLogger);
     }
 
-    // Rutas de la API
-    this.app.use("/api/v1", bookRouter);
-    this.app.use("/api/v1", authorRouter);
+    // Todas las rutas centralizadas desde routes/index.js
+    this.app.use("/api/v1", router);
 
-    // Middleware de manejo de errores (siempre al final)
+    // Middleware de manejo de errores (siempre debe ir al final)
     this.app.use(errorHandler);
 
     try {
+      // Inicializa la base de datos antes de levantar el servidor
       await DB.init();
+
       this.app.listen(this.port, () => {
         this.logger.info(
           `✅ Servidor corriendo en http://localhost:${this.port}`,
