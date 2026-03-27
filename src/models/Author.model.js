@@ -15,6 +15,7 @@ export const initAuthor = (dbConfig) => {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
+          notNull: { msg: "El nombre es obligatorio" },
           notEmpty: { msg: "El nombre no puede estar vacío" },
           len: {
             args: [2, 100],
@@ -27,14 +28,16 @@ export const initAuthor = (dbConfig) => {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
+          notNull: { msg: "La nacionalidad es obligatoria" },
           notEmpty: { msg: "La nacionalidad no puede estar vacía" },
         },
       },
-      // Fecha de nacimiento
+      // Año de nacimiento
       birthYear: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
+          notNull: { msg: "El año de nacimiento es obligatorio" },
           isInt: { msg: "El año debe ser un número entero" },
           min: {
             args: [1000],
@@ -52,7 +55,7 @@ export const initAuthor = (dbConfig) => {
       modelName: "Author",
       tableName: "authors",
       timestamps: true,
-      paranoid: true, // soft delete
+      paranoid: true, // habilita soft delete → agrega deletedAt
     },
   );
 };

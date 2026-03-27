@@ -15,11 +15,19 @@ export class AuthorService {
       return author;
     } catch (error) {
       this.logger.error(`Error al crear el autor: ${error.message}`);
-      throw new AuthorError("Error al crear el autor", error.message, 400);
+      // Si es un error de validación de Sequelize lo retornamos como 400
+      if (error.name === "SequelizeValidationError") {
+        throw new AuthorError(
+          error.errors.map((e) => e.message).join(", "),
+          error.message,
+          400,
+        );
+      }
+      throw new AuthorError("Error al crear el autor", error.message, 500);
     }
   }
 
-  // Obtener todos los autores, incluyendo sus libros
+  // Obtener todos los autores incluyendo sus libros
   static async findAll() {
     try {
       this.logger.info("Obteniendo todos los autores...");
@@ -30,7 +38,7 @@ export class AuthorService {
             model: Book,
             as: "books", // alias definido en la asociación
             attributes: ["id", "title", "genre"],
-            through: { attributes: ["role"] },
+            through: { attributes: ["role"] }, // incluye el rol de la tabla intermedia
           },
         ],
       });
@@ -92,7 +100,14 @@ export class AuthorService {
     } catch (error) {
       this.logger.error(`Error al actualizar el autor: ${error.message}`);
       if (error instanceof NotFoundError) throw error;
-      throw new AuthorError("Error al actualizar el autor", error.message, 400);
+      if (error.name === "SequelizeValidationError") {
+        throw new AuthorError(
+          error.errors.map((e) => e.message).join(", "),
+          error.message,
+          400,
+        );
+      }
+      throw new AuthorError("Error al actualizar el autor", error.message, 500);
     }
   }
 

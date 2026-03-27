@@ -15,6 +15,7 @@ export const initBook = (dbConfig) => {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
+          notNull: { msg: "El título es obligatorio" },
           notEmpty: { msg: "El título no puede estar vacío" },
           len: {
             args: [1, 200],
@@ -27,6 +28,7 @@ export const initBook = (dbConfig) => {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
+          notNull: { msg: "El género es obligatorio" },
           notEmpty: { msg: "El género no puede estar vacío" },
         },
       },
@@ -35,6 +37,7 @@ export const initBook = (dbConfig) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
+          notNull: { msg: "El año de publicación es obligatorio" },
           isInt: { msg: "El año debe ser un número entero" },
           min: {
             args: [1000],
@@ -52,7 +55,7 @@ export const initBook = (dbConfig) => {
       modelName: "Book",
       tableName: "books",
       timestamps: true,
-      paranoid: true, // soft delete
+      paranoid: true, // habilita soft delete → agrega deletedAt
     },
   );
 };

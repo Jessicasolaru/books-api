@@ -15,11 +15,19 @@ export class BookService {
       return book;
     } catch (error) {
       this.logger.error(`Error al crear el libro: ${error.message}`);
-      throw new BookError("Error al crear el libro", error.message, 400);
+      // Si es un error de validación de Sequelize lo retornamos como 400
+      if (error.name === "SequelizeValidationError") {
+        throw new BookError(
+          error.errors.map((e) => e.message).join(", "),
+          error.message,
+          400,
+        );
+      }
+      throw new BookError("Error al crear el libro", error.message, 500);
     }
   }
 
-  // Obtener todos los libros, incluyendo sus autores
+  // Obtener todos los libros incluyendo sus autores
   static async findAll() {
     try {
       this.logger.info("Obteniendo todos los libros...");
@@ -30,7 +38,7 @@ export class BookService {
             model: Author,
             as: "authors", // alias definido en la asociación
             attributes: ["id", "name", "nationality"],
-            through: { attributes: ["role"] }, // incluye el campo role de la tabla intermedia
+            through: { attributes: ["role"] }, // incluye el rol de la tabla intermedia
           },
         ],
       });
@@ -67,7 +75,6 @@ export class BookService {
       return book;
     } catch (error) {
       this.logger.error(`Error al buscar el libro: ${error.message}`);
-      // Si ya es un NotFoundError lo relanzamos tal cual
       if (error instanceof NotFoundError) throw error;
       throw new BookError("Error al buscar el libro");
     }
@@ -94,7 +101,14 @@ export class BookService {
     } catch (error) {
       this.logger.error(`Error al actualizar el libro: ${error.message}`);
       if (error instanceof NotFoundError) throw error;
-      throw new BookError("Error al actualizar el libro", error.message, 400);
+      if (error.name === "SequelizeValidationError") {
+        throw new BookError(
+          error.errors.map((e) => e.message).join(", "),
+          error.message,
+          400,
+        );
+      }
+      throw new BookError("Error al actualizar el libro", error.message, 500);
     }
   }
 
@@ -117,7 +131,7 @@ export class BookService {
     }
   }
 
-  // Agregar un autor a un libro (relación muchos a muchos)
+  // Asociar un autor a un libro (relación muchos a muchos)
   static async addAuthor(bookId, authorId, role = "autor") {
     try {
       this.logger.info(`Asociando autor ${authorId} al libro ${bookId}`);
@@ -130,7 +144,7 @@ export class BookService {
       if (!author)
         throw new NotFoundError(`Autor con id: ${authorId} no encontrado`);
 
-      // addAuthor viene de la asociación belongsToMany
+      // addAuthor es generado automáticamente por Sequelize gracias al belongsToMany
       await book.addAuthor(author, { through: { role } });
       this.logger.info("Autor asociado al libro con éxito");
 
